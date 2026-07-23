@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rastreador de Plan de Estudios - IFTS Nº 13</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --color-primary-green: #00A651;
+            --color-primary-green-dark: #008040;
+            --color-primary-green-light: #00D670;
+            --color-secondary-blue: #003DA5;
+            --color-secondary-blue-dark: #002D7F;
+            
+            --color-dark-bg: #0f1419;
+            --color-dark-card: #1a1f2e;
+            --color-dark-card-hover: #232a3f;
+            
+            --color-light-bg: #f0f5f2;
+            --color-light-card: #ffffff;
+            
+            --color-text-dark: #e0e6ed;
+            --color-text-light: #1a1f2e;
+            
+            --color-pending: #64748b;
+            --color-studying: #f59e0b;
+            --color-completed: #3b82f6;
+            --color-approved: #00A651;
+            --color-locked: #475569;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 100%);
+            color: var(--color-text-dark);
+            transition: all 0.3s ease;
+            line-height: 1.6;
+        }
+
+        body.light-mode {
+            background: linear-gradient(135deg, #f0f5f2 0%, #e8f0eb 100%);
+            color: var(--color-text-light);
+        }
+
+        /* Header */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: linear-gradient(135deg, var(--color-primary-green) 0%, var(--color-primary-green-dark) 100%);
+            color: white;
+            padding: 2rem 1rem;
+            box-shadow: 0 10px 40px rgba(0, 166, 81, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        body.light-mode header {
+            box-shadow: 0 10px 40px rgba(0, 166, 81, 0.2);
+        }
+
+        .header-container {
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .header-logo {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            font-size: 1.75rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .header-text h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .header-text p {
+            font-size: 0.875rem;
+            opacity: 0.95;
+            margin-top: 0.25rem;
+        }
+
+        .theme-toggle {
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        /* Progress Section */
+        .progress-section {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 1.25rem;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .progress-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .progress-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .progress-stat {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 0.6rem 1.25rem;
+            border-radius: 0.75rem;
+            font-weight: 700;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            font-size: 1.1rem;
+        }
+
+        .progress-bar-container {
+            position: relative;
+            height: 1.5rem;
+            border-radius: 1rem;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 1rem;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--color-primary-green-light) 0%, var(--color-primary-green) 100%);
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 1rem;
+            box-shadow: 0 0 20px rgba(0, 214, 112, 0.5);
+        }
+
+        .progress-text {
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.95);
+            font-weight: 600;
+        }
+
+        /* Main Content */
+        main {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        /* Filter Buttons */
+        .filter-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 2.5rem;
+            padding: 1.25rem;
+            background: rgba(0, 166, 81, 0.05);
+            border-radius: 1rem;
+            border: 2px solid rgba(0, 166, 81, 0.15);
+            backdrop-filter: blur(10px);
+        }
+
+        body.light-mode .filter-buttons {
+            background: rgba(0, 166, 81, 0.08);
+            border-color: rgba(0, 166, 81, 0.2);
+        }
+
+        .filter-btn {
+            padding: 0.85rem 1.75rem;
+            border: 2px solid transparent;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--color-text-dark);
+            font-size: 0.95rem;
+        }
+
+        body.light-mode .filter-btn {
+            background: rgba(0, 166, 81, 0.08);
+            color: var(--color-text-light);
+        }
+
+        .filter-btn:hover {
+            background: rgba(0, 166, 81, 0.15);
+            transform: translateY(-2px);
+            border-color: var(--color-primary-green);
+        }
+
+        .filter-btn.active {
+            background: linear-gradient(135deg, var(--color-primary-green) 0%, var(--color-primary-green-dark) 100%);
+            color: white;
+            border-color: var(--color-primary-green-light);
+            box-shadow: 0 4px 20px rgba(0, 166, 81, 0.4);
+        }
+
+        body.light-mode .filter-btn.active {
+            box-shadow: 0 4px 20px rgba(0, 166, 81, 0.3);
+        }
+
+        /* Area Sections */
+        .area-section {
+            margin-bottom: 3rem;
+        }
+
+        .area-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: white;
+        }
+
+        body.light-mode .area-title {
+            color: var(--color-primary-green-dark);
+        }
+
+        .area-divider {
+            width: 5px;
+            height: 2.5rem;
+            border-radius: 2.5px;
+            background: linear-gradient(180deg, var(--color-primary-green-light) 0%, var(--color-primary-green) 100%);
+            box-shadow: 0 0 15px rgba(0, 214, 112, 0.4);
+        }
+
+        /* Courses Grid */
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 1.75rem;
+        }
+
+        /* Course Card */
+        .course-card {
+            border: 2px solid;
+            border-radius: 1rem;
+            padding: 1.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            background: var(--color-dark-card);
+            overflow: hidden;
+        }
+
+        body.light-mode .course-card {
+            background: var(--color-light-card);
+        }
+
+        .course-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+            z-index: 0;
+        }
+
+        .course-card:hover::before {
+            left: 100%;
+        }
+
+        .course-card > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .course-card:hover {
+            transform: translateY(-6px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        }
+
+        body.light-mode .course-card:hover {
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+        }
+
+        /* Status Colors */
+        .course-card.pending {
+            border-color: var(--color-pending);
+            background: rgba(100, 116, 139, 0.05);
+        }
+
+        body.light-mode .course-card.pending {
+            border-color: #cbd5e1;
+        }
+
+        .course-card.studying {
+            border-color: var(--color-studying);
+            background: rgba(245, 158, 11, 0.08);
+            box-shadow: inset 0 0 20px rgba(245, 158, 11, 0.1);
+        }
+
+        body.light-mode .course-card.studying {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: #fcd34d;
+        }
+
+        .course-card.completed {
+            border-color: var(--color-completed);
+            background: rgba(59, 130, 246, 0.08);
+        }
+
+        body.light-mode .course-card.completed {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: #93c5fd;
+        }
+
+        .course-card.approved {
+            border-color: var(--color-primary-green-light);
+            background: rgba(0, 166, 81, 0.12);
+            box-shadow: inset 0 0 20px rgba(0, 214, 112, 0.15), 0 0 25px rgba(0, 166, 81, 0.2);
+        }
+
+        body.light-mode .course-card.approved {
+            background: rgba(0, 166, 81, 0.1);
+            border-color: var(--color-primary-green);
+        }
+
+        .course-card.locked {
+            border-color: var(--color-locked);
+            background: rgba(71, 85, 105, 0.05);
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+
+        body.light-mode .course-card.locked {
+            background: rgba(71, 85, 105, 0.05);
+            opacity: 0.65;
+        }
+
+        /* Course Header */
+        .course-header {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            align-items: flex-start;
+        }
+
+        .course-icon {
+            width: 28px;
+            height: 28px;
+            flex-shrink: 0;
+            font-size: 1.4rem;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .course-name {
+            font-weight: 600;
+            font-size: 1.05rem;
+            line-height: 1.3;
+            flex: 1;
+        }
+
+        /* Lock Icon */
+        .lock-icon {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            width: 28px;
+            height: 28px;
+            opacity: 0.6;
+            font-size: 1.4rem;
+        }
+
+        /* Course Metadata */
+        .course-metadata {
+            font-size: 0.85rem;
+            margin: 1.25rem 0;
+            opacity: 0.85;
+            line-height: 1.7;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .status-badge {
+            display: inline-block;
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            width: fit-content;
+            border: 2px solid currentColor;
+            background: rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .course-card.studying .status-badge {
+            color: var(--color-studying);
+        }
+
+        .course-card.completed .status-badge {
+            color: var(--color-completed);
+        }
+
+        .course-card.approved .status-badge {
+            color: var(--color-primary-green-light);
+        }
+
+        .course-card.pending .status-badge {
+            color: var(--color-pending);
+        }
+
+        .course-card.pending:hover .status-badge,
+        .course-card.studying:hover .status-badge,
+        .course-card.completed:hover .status-badge,
+        .course-card.approved:hover .status-badge {
+            background: currentColor;
+            color: white;
+        }
+
+        /* Prerequisites */
+        .prerequisites {
+            margin-top: 1.25rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.8rem;
+            line-height: 1.6;
+        }
+
+        body.light-mode .prerequisites {
+            border-top-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .prerequisites-title {
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            color: var(--color-primary-green-light);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+
+        .prerequisites-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .prerequisites-list li {
+            display: flex;
+            gap: 0.6rem;
+            align-items: flex-start;
+        }
+
+        .prereq-met {
+            color: var(--color-primary-green);
+            font-weight: 700;
+            min-width: 20px;
+        }
+
+        .prereq-unmet {
+            color: var(--color-pending);
+            opacity: 0.8;
+            min-width: 20px;
+        }
+
+        /* Click Hint */
+        .click-hint {
+            font-size: 0.8rem;
+            color: var(--color-primary-green);
+            font-weight: 600;
+            margin-top: 1.25rem;
+            opacity: 0.8;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+
+        /* Footer Actions */
+        .footer-actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 3rem;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border: 2px solid;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .btn-reset {
+            background: transparent;
+            color: #ef4444;
+            border-color: #ef4444;
+        }
+
+        .btn-reset:hover {
+            background: rgba(239, 68, 68, 0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.25);
+        }
+
+        .btn-share {
+            background: linear-gradient(135deg, var(--color-primary-green) 0%, var(--color-primary-green-dark) 100%);
+            color: white;
+            border-color: var(--color-primary-green-light);
+            box-shadow: 0 4px 15px rgba(0, 166, 81, 0.3);
+        }
+
+        .btn-share:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 166, 81, 0.4);
+        }
+
+        body.light-mode .btn-reset {
+            color: #dc2626;
+            border-color: #dc2626;
+        }
+
+        body.light-mode .btn-reset:hover {
+            background: rgba(220, 38, 38, 0.1);
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 4rem;
+            border-top: 2px solid rgba(0, 166, 81, 0.2);
+            background: rgba(0, 166, 81, 0.03);
+            text-align: center;
+            padding: 2.5rem 1rem;
+            color: var(--color-text-dark);
+        }
+
+        body.light-mode footer {
+            background: rgba(0, 166, 81, 0.05);
+            border-top-color: rgba(0, 166, 81, 0.15);
+            color: var(--color-text-light);
+        }
+
+        footer p {
+            margin: 0.5rem 0;
+            font-size: 0.875rem;
+            opacity: 0.85;
+        }
+
+        footer .institution {
+            font-weight: 700;
+            color: var(--color-primary-green);
+            margin-top: 1rem;
+            font-size: 1rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .courses-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header-title h1 {
+                font-size: 1.5rem;
+            }
+
+            .area-title {
+                font-size: 1.25rem;
+            }
+
+            main {
+                padding: 1rem;
+            }
+
+            header {
+                padding: 1.5rem 1rem;
+            }
+
+            .header-top {
+                margin-bottom: 1.5rem;
+            }
+
+            .progress-section {
+                padding: 1.5rem;
+            }
+
+            .course-card {
+                padding: 1.5rem;
+            }
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-container">
+        <div class="header-top">
+            <div class="header-title">
+                <div class="header-logo">IF</div>
+                <div class="header-text">
+                    <h1>Tecnicatura en Bibliotecología</h1>
+                    <p>IFTS Nº 13 - Rastreador de Plan de Estudios</p>
+                </div>
+            </div>
+            <button class="theme-toggle" onclick="toggleTheme()">
+                <span id="theme-icon">🌙</span>
+                <span id="theme-text">Oscuro</span>
+            </button>
+        </div>
+
+        <div class="progress-section">
+            <div class="progress-header">
+                <div class="progress-title">
+                    <span>📊</span>
+                    <span>Tu Progreso Académico</span>
+                </div>
+                <span class="progress-stat" id="progress-text">0/28</span>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
+            </div>
+            <div class="progress-text" id="progress-percent">0% de carrera completado</div>
+        </div>
+    </div>
+</header>
+
+<main>
+    <!-- Filter Buttons -->
+    <div class="filter-buttons">
+        <button class="filter-btn active" onclick="filterByArea('all')">📚 Ver Todo</button>
+        <button class="filter-btn" onclick="filterByArea('Sociocultural')">🎓 Sociocultural</button>
+        <button class="filter-btn" onclick="filterByArea('Bibliotecología')">🔍 Bibliotecología</button>
+        <button class="filter-btn" onclick="filterByArea('Prácticas')">👨‍💼 Prácticas</button>
+    </div>
+
+    <!-- Courses Container -->
+    <div id="courses-container"></div>
+
+    <!-- Footer Actions -->
+    <div class="footer-actions">
+        <button class="btn btn-reset" onclick="resetProgress()">🔄 Reiniciar Progreso</button>
+        <button class="btn btn-share" onclick="shareProgress()">📤 Compartir Progreso</button>
+    </div>
+</main>
+
+<footer>
+    <p>Plan de Estudios Oficial - Resolución GCBA Nº 902/SED/2005</p>
+    <p class="institution">Instituto de Formación Técnica Superior Nº 13</p>
+    <p>Tu progreso se guarda automáticamente en tu navegador</p>
+</footer>
+
+<script>
+    // Curriculum Data
+    const curriculumData = [
+        // Área de formación sociocultural
+        { id: 1, name: 'Historia de los soportes y de las unidades de información', area: 'Sociocultural', period: 'Cuatrimestre 1', correlatives: [], credits: 48 },
+        { id: 2, name: 'Historia de los procesos culturales 1', area: 'Sociocultural', period: 'Cuatrimestre 1', correlatives: [], credits: 96 },
+        { id: 3, name: 'Introducción a las ciencias', area: 'Sociocultural', period: 'Cuatrimestre 1', correlatives: [], credits: 64 },
+        { id: 4, name: 'Inglés 1', area: 'Sociocultural', period: 'Cuatrimestre 1', correlatives: [], credits: 48 },
+        { id: 5, name: 'Psicología del lector', area: 'Sociocultural', period: 'Cuatrimestre 1', correlatives: [], credits: 48 },
+        { id: 6, name: 'Teoría y medios de comunicación', area: 'Sociocultural', period: 'Cuatrimestre 1', correlatives: [], credits: 64 },
+        { id: 7, name: 'Literatura y corrientes literarias', area: 'Sociocultural', period: 'Cuatrimestre 2', correlatives: [], credits: 96 },
+        { id: 8, name: 'Historia de los procesos culturales 2', area: 'Sociocultural', period: 'Cuatrimestre 2', correlatives: [2], credits: 96 },
+        { id: 9, name: 'Inglés 2', area: 'Sociocultural', period: 'Cuatrimestre 2', correlatives: [4], credits: 48 },
+        { id: 10, name: 'Literatura infantil y juvenil', area: 'Sociocultural', period: 'Cuatrimestre 3', correlatives: [7], credits: 96 },
+        { id: 11, name: 'Inglés 3', area: 'Sociocultural', period: 'Cuatrimestre 3', correlatives: [9], credits: 48 },
+
+        // Área de formación en Bibliotecología
+        { id: 12, name: 'Introducción a las ciencias de la información', area: 'Bibliotecología', period: 'Cuatrimestre 1', correlatives: [], credits: 64 },
+        { id: 13, name: 'Catalogación y clasificación 1', area: 'Bibliotecología', period: 'Año 1', correlatives: [], credits: 192 },
+        { id: 14, name: 'Tratamiento automático de la información 1', area: 'Bibliotecología', period: 'Cuatrimestre 1', correlatives: [], credits: 48 },
+        { id: 15, name: 'Fuentes y servicios de la información 1', area: 'Bibliotecología', period: 'Año 1', correlatives: [], credits: 128 },
+        { id: 16, name: 'Biblioteconomía 1', area: 'Bibliotecología', period: 'Año 1', correlatives: [], credits: 128 },
+        { id: 17, name: 'Catalogación y clasificación 2', area: 'Bibliotecología', period: 'Año 2', correlatives: [13, 14], credits: 192 },
+        { id: 18, name: 'Tratamiento automático de la información 2', area: 'Bibliotecología', period: 'Cuatrimestre 3', correlatives: [13, 14], credits: 48 },
+        { id: 19, name: 'Fuentes y servicios de la información 2', area: 'Bibliotecología', period: 'Año 2', correlatives: [15], credits: 128 },
+        { id: 20, name: 'Biblioteconomía 2', area: 'Bibliotecología', period: 'Año 2', correlatives: [16], credits: 128 },
+        { id: 21, name: 'Catalogación y clasificación 3', area: 'Bibliotecología', period: 'Año 3', correlatives: [17, 18], credits: 192 },
+        { id: 22, name: 'Tratamiento automático de la información 3', area: 'Bibliotecología', period: 'Cuatrimestre 5', correlatives: [17, 18], credits: 48 },
+        { id: 23, name: 'Fuentes y servicios de la información 3', area: 'Bibliotecología', period: 'Año 3', correlatives: [19], credits: 128 },
+        { id: 24, name: 'Gestión de bibliotecas escolares', area: 'Bibliotecología', period: 'Cuatrimestre 4', correlatives: [16], credits: 48 },
+        { id: 25, name: 'Seminario de investigación bibliotecológica', area: 'Bibliotecología', period: 'Cuatrimestre 4', correlatives: [1, 3, 12], credits: 84 },
+
+        // Área de Prácticas Profesionales
+        { id: 26, name: 'Práctica Bibliotecaria 1', area: 'Prácticas', period: 'Cuatrimestre 2', correlatives: [], credits: 54 },
+        { id: 27, name: 'Práctica Bibliotecaria 2', area: 'Prácticas', period: 'Cuatrimestre 4', correlatives: [26, 13, 14], credits: 84 },
+        { id: 28, name: 'Práctica Bibliotecaria 3', area: 'Prácticas', period: 'Cuatrimestre 6', correlatives: [27, 17, 18], credits: 174 }
+    ];
+
+    // State
+    let courseStatus = {};
+    let currentFilter = 'all';
+
+    // Initialize
+    function init() {
+        loadFromStorage();
+        renderCourses();
+        updateProgress();
+        loadTheme();
+    }
+
+    // LocalStorage Functions
+    function loadFromStorage() {
+        const saved = localStorage.getItem('curriculumProgress');
+        if (saved) {
+            courseStatus = JSON.parse(saved);
+        }
+    }
+
+    function saveToStorage() {
+        localStorage.setItem('curriculumProgress', JSON.stringify(courseStatus));
+    }
+
+    // Theme
+    function loadTheme() {
+        if (localStorage.getItem('theme-mode') === 'light') {
+            document.body.classList.add('light-mode');
+            document.getElementById('theme-icon').textContent = '☀️';
+            document.getElementById('theme-text').textContent = 'Claro';
+        }
+    }
+
+    function toggleTheme() {
+        document.body.classList.toggle('light-mode');
+        const icon = document.getElementById('theme-icon');
+        const text = document.getElementById('theme-text');
+        if (document.body.classList.contains('light-mode')) {
+            icon.textContent = '☀️';
+            text.textContent = 'Claro';
+            localStorage.setItem('theme-mode', 'light');
+        } else {
+            icon.textContent = '🌙';
+            text.textContent = 'Oscuro';
+            localStorage.setItem('theme-mode', 'dark');
+        }
+    }
+
+    // Course Status Logic
+    function isCourseUnlocked(course) {
+        if (course.correlatives.length === 0) return true;
+        return course.correlatives.every(id => courseStatus[id] === 'approved');
+    }
+
+    function updateCourseStatus(courseId) {
+        const statuses = ['pending', 'studying', 'completed', 'approved'];
+        const currentStatus = courseStatus[courseId] || 'pending';
+        const nextIndex = (statuses.indexOf(currentStatus) + 1) % statuses.length;
+        courseStatus[courseId] = statuses[nextIndex];
+        saveToStorage();
+        renderCourses();
+        updateProgress();
+    }
+
+    // Get Status Info
+    function getStatusInfo(courseId) {
+        const status = courseStatus[courseId] || 'pending';
+        const course = curriculumData.find(c => c.id === courseId);
+        const isLocked = !isCourseUnlocked(course);
+
+        if (isLocked) {
+            return { status: 'locked', label: 'Bloqueada', icon: '🔒' };
+        }
+
+        const statuses = {
+            pending: { label: 'Pendiente', icon: '○' },
+            studying: { label: 'Cursando', icon: '📖' },
+            completed: { label: 'Regularizada', icon: '✓' },
+            approved: { label: 'Aprobada', icon: '✓' }
+        };
+
+        return { status, label: statuses[status].label, icon: statuses[status].icon };
+    }
+
+    // Render Courses
+    function renderCourses() {
+        const container = document.getElementById('courses-container');
+        container.innerHTML = '';
+
+        const areas = ['Sociocultural', 'Bibliotecología', 'Prácticas'];
+
+        areas.forEach(areaName => {
+            if (currentFilter !== 'all' && currentFilter !== areaName) return;
+
+            const areaCourses = curriculumData.filter(c => c.area === areaName);
+            if (areaCourses.length === 0) return;
+
+            const areaSection = document.createElement('div');
+            areaSection.className = 'area-section';
+
+            const areaTitle = document.createElement('div');
+            areaTitle.className = 'area-title';
+            areaTitle.innerHTML = `<div class="area-divider"></div>${areaName}`;
+            areaSection.appendChild(areaTitle);
+
+            const coursesGrid = document.createElement('div');
+            coursesGrid.className = 'courses-grid';
+
+            areaCourses.forEach(course => {
+                const card = createCourseCard(course);
+                coursesGrid.appendChild(card);
+            });
+
+            areaSection.appendChild(coursesGrid);
+            container.appendChild(areaSection);
+        });
+    }
+
+    function createCourseCard(course) {
+        const statusInfo = getStatusInfo(course.id);
+        const isLocked = statusInfo.status === 'locked';
+
+        const card = document.createElement('div');
+        card.className = `course-card ${statusInfo.status}`;
+        
+        if (!isLocked) {
+            card.addEventListener('click', () => updateCourseStatus(course.id));
+        }
+
+        let html = `
+            <div class="course-header">
+                <span class="course-icon">${statusInfo.icon}</span>
+                <div class="course-name">${course.name}</div>
+                ${isLocked ? '<span class="lock-icon">🔒</span>' : ''}
+            </div>
+            <div class="course-metadata">
+                <div>📅 ${course.period}</div>
+                <div>⏱️ ${course.credits} hs cátedra</div>
+            </div>
+            <div class="status-badge">${statusInfo.label}</div>
+        `;
+
+        if (course.correlatives.length > 0) {
+            html += `
+                <div class="prerequisites">
+                    <div class="prerequisites-title">Requisitos</div>
+                    <ul class="prerequisites-list">
+                        ${course.correlatives.map(id => {
+                            const prereq = curriculumData.find(c => c.id === id);
+                            const prereqStatus = courseStatus[id] || 'pending';
+                            const prereqApproved = prereqStatus === 'approved';
+                            return `<li>
+                                <span class="${prereqApproved ? 'prereq-met' : 'prereq-unmet'}">
+                                    ${prereqApproved ? '✓' : '○'}
+                                </span>
+                                <span>${prereq.name}</span>
+                            </li>`;
+                        }).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+
+        if (!isLocked) {
+            html += '<p class="click-hint">Haz clic para cambiar estado</p>';
+        }
+
+        card.innerHTML = html;
+        return card;
+    }
+
+    // Progress Update
+    function updateProgress() {
+        const approvedCount = Object.values(courseStatus).filter(s => s === 'approved').length;
+        const total = curriculumData.length;
+        const percent = Math.round((approvedCount / total) * 100);
+
+        document.getElementById('progress-text').textContent = `${approvedCount}/${total}`;
+        document.getElementById('progress-percent').textContent = `${percent}% de carrera completado`;
+        document.getElementById('progress-bar').style.width = `${percent}%`;
+    }
+
+    // Filter
+    function filterByArea(area) {
+        currentFilter = area;
+        
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        
+        renderCourses();
+    }
+
+    // Reset Progress
+    function resetProgress() {
+        if (confirm('¿Estás seguro de que deseas reiniciar tu progreso? Esta acción no se puede deshacer.')) {
+            courseStatus = {};
+            saveToStorage();
+            renderCourses();
+            updateProgress();
+        }
+    }
+
+    // Share Progress
+    function shareProgress() {
+        const summary = Object.entries(courseStatus)
+            .map(([id, status]) => {
+                const course = curriculumData.find(c => c.id === parseInt(id));
+                const statusText = {
+                    'pending': 'Pendiente',
+                    'studying': 'Cursando',
+                    'completed': 'Regularizada',
+                    'approved': 'Aprobada'
+                }[status] || status;
+                return `${course.name}: ${statusText}`;
+            })
+            .join('\n');
+
+        const text = `Mi Progreso en Bibliotecología - IFTS Nº 13\n\n${summary || 'Sin progreso registrado'}`;
+        
+        navigator.clipboard.writeText(text).then(() => {
+            alert('¡Progreso copiado al portapapeles!');
+        }).catch(() => {
+            alert('No se pudo copiar. Intenta nuevamente.');
+        });
+    }
+
+    // Start
+    init();
+</script>
+
+</body>
+</html>
